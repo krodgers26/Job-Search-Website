@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Job Search Results</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+  h1 { margin-bottom: 0.2rem; }
+  .meta { color: #666; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.6rem 0.7rem; border-bottom: 1px solid #e2e2e2; vertical-align: top; }
+  th { background: #f5f5f5; position: sticky; top: 0; }
+  tr.new { background: #eefaf0; }
+  tr:hover { background: #f9f9f9; }
+  .score { font-weight: 600; }
+  .score-high { color: #1a7f37; }
+  .score-med { color: #9a6700; }
+  .score-low { color: #999; }
+  .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 3px; background: #1a7f37; color: white; margin-left: 0.4rem; }
+  .company { font-weight: 600; }
+  .location { color: #555; font-size: 0.9rem; }
+  a { color: #0552b5; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <h1>Job Search Results</h1>
+  <div class="meta">
+    Generated {{ generated_at }} &middot;
+    {{ postings|length }} postings shown (score &ge; {{ min_score }}) &middot;
+    {{ new_count }} new since last refresh &middot;
+    {{ excluded_count }} excluded by filters
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Score</th>
+        <th>Title</th>
+        <th>Company</th>
+        <th>Location</th>
+        <th>Posted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in postings %}
+      <tr class="{{ 'new' if p.is_new else '' }}">
+        <td class="score {{ 'score-high' if p.score >= 12 else ('score-med' if p.score >= 6 else 'score-low') }}">{{ p.score }}</td>
+        <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.title }}</a>{% if p.is_new %}<span class="badge">NEW</span>{% endif %}</td>
+        <td class="company">{{ p.company }}</td>
+        <td class="location">{{ p.location }}</td>
+        <td>{{ p.posted_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

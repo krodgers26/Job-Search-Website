@@ -1,0 +1,77 @@
+name: Refresh Job Search Results
+
+# Manual only: nothing runs unless you click "Run workflow" in the Actions
+# tab on GitHub. This matches the local "run whenever I want" behavior of
+# `python refresh.py`, just runnable from a browser instead of a terminal.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Avoids two Pages deployments racing each other if you click the button
+# twice in a row.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # The history database normally lives at output/jobs.db, but that
+      # folder is gitignored for local runs (so your local history and CI's
+      # don't collide). CI keeps its own persistent copy under
+      # .github/data/jobs.db instead, and copies it into place here before
+      # each run so dedupe/history carries over between workflow runs.
+      - name: Restore history database
+        run: |
+          mkdir -p output
+          if [ -f .github/data/jobs.db ]; then
+            cp .github/data/jobs.db output/jobs.db
+          fi
+
+      - name: Run refresh
+        run: python refresh.py
+
+      - name: Save history database back to repo
+        run: |
+          mkdir -p .github/data
+          cp output/jobs.db .github/data/jobs.db
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/data/jobs.db
+          if ! git diff --cached --quiet; then
+            git commit -m "Update job history database [automated]"
+            git push
+          fi
+
+      - name: Prepare Pages site
+        run: |
+          mkdir -p pages-dist
+          cp output/jobs.html pages-dist/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
