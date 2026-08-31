@@ -15,6 +15,19 @@ import storage
 from scorer import score_posting
 from sources import ashby, greenhouse, lever, rss, workday
 
+
+def _fmt_k(n: int) -> str:
+    return f"${n / 1000:.0f}K"
+
+
+def format_salary(salary_min, salary_max) -> str:
+    if salary_min is None or salary_max is None:
+        return "Not listed"
+    if salary_min == salary_max:
+        return _fmt_k(salary_min)
+    return f"{_fmt_k(salary_min)}–{_fmt_k(salary_max)}"
+
+
 FETCHERS = {
     "greenhouse": greenhouse.fetch,
     "lever": lever.fetch,
@@ -41,7 +54,7 @@ def main():
             print(f"  [skip] {name}: platform '{platform}' not supported yet", file=sys.stderr)
             continue
         try:
-            postings = fetcher(company_cfg)
+            postings = fetcher(company_cfg, cfg)
         except Exception as exc:  # noqa: BLE001 - one bad company shouldn't kill the whole run
             print(f"  [error] {name}: {exc}", file=sys.stderr)
             continue
@@ -77,6 +90,9 @@ def main():
                     "location": posting.location,
                     "posted_date": posting.posted_date,
                     "url": posting.url,
+                    "salary_min": result.salary_min,
+                    "salary_max": result.salary_max,
+                    "salary_display": format_salary(result.salary_min, result.salary_max),
                 }
             )
 

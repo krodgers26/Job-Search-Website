@@ -25,7 +25,10 @@ def write_html(rows: list[dict], html_path: str, min_score: int, new_count: int,
 
 def write_csv(rows: list[dict], csv_path: str):
     Path(csv_path).parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["score", "is_new", "title", "company", "location", "posted_date", "url"]
+    fieldnames = [
+        "score", "is_new", "title", "company", "location", "posted_date",
+        "salary_display", "salary_min", "salary_max", "url",
+    ]
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()

@@ -134,15 +134,54 @@ Every posting starts at 0 points. Points are added for:
   the title (worth more) or description (worth less)
 - Being located in Boston/MA, or being remote/hybrid
 - The title containing a seniority term like "Associate", "Director", etc.
+- The disclosed salary overlapping your target range, or coming close to it
+  (see "Salary" below)
+- Being posted recently (see "Posting date and recency" below)
 
 Postings are **hard-excluded** (never shown, though still recorded in the
 history database) if:
 - The title contains a junior-level term (Intern, Coordinator, etc.)
 - The title contains an excluded term (Compliance, Legal Counsel, Paralegal)
 - The location doesn't match Boston/MA and isn't remote/hybrid
+- A disclosed salary tops out at or below your cutoff (see "Salary" below)
 
 Everything else is sorted by score (highest first), then by post date
-(newest first).
+(newest first) as a tiebreaker.
+
+## Salary
+
+The report has a **Salary** column. Not every job posting states a salary —
+Massachusetts requires it for many employers, but not every state does, and
+not every listing system exposes it the same way — so this is best-effort:
+the tool looks for a dollar range near words like "salary," "compensation,"
+or "base pay" in the job's own description text, deliberately ignoring other
+dollar figures that show up constantly in PE/asset-management postings (fund
+size, deal size, AUM). If nothing confident is found, it shows "Not listed"
+and the posting is neither boosted nor penalized for it.
+
+Your target range and the cutoff are set in `config.yaml` under `salary:`
+- `target_min` / `target_max` — your target base salary range (currently
+  $130,000–$200,000). A posting whose disclosed range overlaps this gets a
+  bonus (`in_range_bonus`); one that's close but doesn't quite overlap gets
+  a smaller bonus (`near_range_bonus`, within `near_range_buffer` dollars).
+- `exclude_if_max_at_or_below` — a posting whose disclosed range tops out at
+  or below this (currently $120,000) is dropped entirely, no matter how well
+  it otherwise matches.
+
+One limitation worth knowing: for Workday-listed companies, getting the
+salary means fetching each job's own detail page as a second step (the
+initial company-wide list doesn't include it), which is best-effort and
+capped at 50 jobs per company per refresh so a huge board doesn't turn one
+refresh into hundreds of requests. If it fails for a given posting, that
+posting still shows up — it just won't have salary data for that run.
+
+## Posting date and recency
+
+The **Posted** column shows the date each posting went up (from the
+company's own listing system). Recently posted roles are also worth more
+points, so an otherwise-similar newer posting ranks above an older one —
+tune this in `config.yaml` under `recency.bonus_tiers` (e.g. posted within
+the last 3 days is worth more than within the last 14).
 
 ## Output files
 
@@ -172,6 +211,11 @@ Everything else is sorted by score (highest first), then by post date
   isn't one of `greenhouse`, `lever`, `ashby`, `workday`, `rss` (or it's a
   commented-out placeholder — see "What's currently tracked" above).
 - **Nothing shows up for a company you know is hiring**: check whether the
-  posting is being hard-excluded by the location or seniority filters (it's
-  still saved in `output/jobs.db`, just not in the HTML report) — try
-  loosening the filter it's being caught by in `config.yaml`.
+  posting is being hard-excluded by the location, seniority, or salary
+  filters (it's still saved in `output/jobs.db`, just not in the HTML
+  report) — try loosening the filter it's being caught by in `config.yaml`.
+- **A posting you know has a salary shows "Not listed"**: the salary parser
+  only looks at text the company actually published in the listing — if
+  they didn't disclose it there (common outside Massachusetts), or the
+  detail-page fetch failed for a Workday posting, there's nothing to find.
+  Click through to the actual posting to check by hand.

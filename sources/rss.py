@@ -1,13 +1,30 @@
 """Fetch postings from a plain RSS/Atom job feed."""
 
 import xml.etree.ElementTree as ET
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 
 import requests
 
 from .common import Posting, strip_html
 
 
-def fetch(company_cfg: dict) -> list[Posting]:
+def _parse_pub_date(pub_date: str) -> str:
+    """RSS uses RFC822 dates ("Wed, 02 Oct 2024 13:00:00 GMT"), Atom uses
+    ISO 8601 - handle either and fall back to unknown rather than guessing."""
+    if not pub_date:
+        return ""
+    try:
+        return parsedate_to_datetime(pub_date).date().isoformat()
+    except (TypeError, ValueError):
+        pass
+    try:
+        return datetime.fromisoformat(pub_date.replace("Z", "+00:00")).date().isoformat()
+    except ValueError:
+        return ""
+
+
+def fetch(company_cfg: dict, global_cfg: dict | None = None) -> list[Posting]:
     feed_url = company_cfg["feed_url"]
     company_name = company_cfg["name"]
 
@@ -32,7 +49,7 @@ def fetch(company_cfg: dict) -> list[Posting]:
                 title=title.strip(),
                 location="",
                 url=link or "",
-                posted_date=(pub_date or "")[:10],
+                posted_date=_parse_pub_date(pub_date),
                 description=description,
             )
         )

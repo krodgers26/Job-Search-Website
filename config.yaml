@@ -170,6 +170,41 @@ scoring:
       weight: 2
 
 # ------------------------------------------------------------------
+# Salary filter and scoring.
+# Not every posting discloses a salary (Massachusetts requires it for many
+# employers, but not everywhere else) - a posting where no salary could be
+# found is never excluded or penalized for it, it's just scored without a
+# salary bonus either way.
+# ------------------------------------------------------------------
+salary:
+  target_min: 130000
+  target_max: 200000
+  # A posting whose disclosed range tops out at or below this is dropped
+  # entirely, regardless of everything else about it.
+  exclude_if_max_at_or_below: 120000
+  # Points added when the disclosed range overlaps your target range at all.
+  in_range_bonus: 10
+  # Points added when it doesn't quite overlap but comes close - within
+  # near_range_buffer dollars of either edge of your target range.
+  near_range_bonus: 4
+  near_range_buffer: 15000
+
+# ------------------------------------------------------------------
+# Recency scoring - newer postings get a boost so they rank higher even
+# when an older posting scores similarly otherwise. List tiers with the
+# smallest "within_days" first; the first (smallest/soonest) matching tier
+# wins, so keep them in ascending order if you edit this.
+# ------------------------------------------------------------------
+recency:
+  bonus_tiers:
+    - within_days: 3
+      bonus: 8
+    - within_days: 7
+      bonus: 5
+    - within_days: 14
+      bonus: 2
+
+# ------------------------------------------------------------------
 # Seniority filter.
 # exclude_terms: if a title contains any of these, the posting is
 #   hard-excluded from results (never shown).

@@ -11,7 +11,7 @@ from .common import Posting, strip_html
 API_URL = "https://api.ashbyhq.com/posting-api/job-board/{board_id}"
 
 
-def fetch(company_cfg: dict) -> list[Posting]:
+def fetch(company_cfg: dict, global_cfg: dict | None = None) -> list[Posting]:
     board_id = company_cfg["board_id"]
     company_name = company_cfg["name"]
 

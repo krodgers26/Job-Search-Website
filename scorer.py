@@ -1,7 +1,9 @@
 """Relevance scoring against your target-role profile in config.yaml."""
 
 from dataclasses import dataclass
+from datetime import date
 
+from salary import parse_salary_range
 from sources.common import Posting
 
 
@@ -10,6 +12,8 @@ class ScoreResult:
     score: int
     excluded: bool
     exclude_reason: str
+    salary_min: int | None = None
+    salary_max: int | None = None
 
 
 def score_posting(posting: Posting, cfg: dict) -> ScoreResult:
@@ -17,15 +21,17 @@ def score_posting(posting: Posting, cfg: dict) -> ScoreResult:
     desc_lower = posting.description.lower()
     location_lower = posting.location.lower()
 
+    salary_min, salary_max = parse_salary_range(posting.description)
+
     # --- Hard excludes: title terms ------------------------------------
     for term in cfg.get("exclude_title_terms", []):
         if term.lower() in title_lower:
-            return ScoreResult(0, True, f"title contains excluded term '{term}'")
+            return ScoreResult(0, True, f"title contains excluded term '{term}'", salary_min, salary_max)
 
     seniority_cfg = cfg.get("seniority", {})
     for term in seniority_cfg.get("exclude_terms", []):
         if term.lower() in title_lower:
-            return ScoreResult(0, True, f"title contains junior-level term '{term}'")
+            return ScoreResult(0, True, f"title contains junior-level term '{term}'", salary_min, salary_max)
 
     # --- Hard exclude: location ------------------------------------------
     location_cfg = cfg.get("location", {})
@@ -39,7 +45,19 @@ def score_posting(posting: Posting, cfg: dict) -> ScoreResult:
 
     if location_cfg.get("exclude_if_no_location_match", False):
         if not has_target_location and not has_remote:
-            return ScoreResult(0, True, f"location '{posting.location}' doesn't match Boston or remote")
+            return ScoreResult(
+                0, True, f"location '{posting.location}' doesn't match Boston or remote", salary_min, salary_max
+            )
+
+    # --- Hard exclude: salary too low ---------------------------------------
+    salary_cfg = cfg.get("salary", {})
+    exclude_at_or_below = salary_cfg.get("exclude_if_max_at_or_below")
+    if exclude_at_or_below is not None and salary_max is not None and salary_max <= exclude_at_or_below:
+        return ScoreResult(
+            0, True,
+            f"salary tops out at ${salary_max:,}, at or below your ${exclude_at_or_below:,} cutoff",
+            salary_min, salary_max,
+        )
 
     # --- Scoring -----------------------------------------------------------
     score = 0
@@ -66,4 +84,29 @@ def score_posting(posting: Posting, cfg: dict) -> ScoreResult:
             score += seniority_cfg.get("include_bonus", 0)
             break
 
-    return ScoreResult(score, False, "")
+    # --- Salary bonus: reward being in or near your target range -----------
+    if salary_min is not None and salary_max is not None:
+        target_min = salary_cfg.get("target_min")
+        target_max = salary_cfg.get("target_max")
+        if target_min is not None and target_max is not None:
+            overlaps_target = salary_min <= target_max and salary_max >= target_min
+            buffer = salary_cfg.get("near_range_buffer", 0)
+            near_target = (target_min - buffer) <= salary_max and salary_min <= (target_max + buffer)
+            if overlaps_target:
+                score += salary_cfg.get("in_range_bonus", 0)
+            elif near_target:
+                score += salary_cfg.get("near_range_bonus", 0)
+
+    # --- Recency bonus: newer postings rank higher --------------------------
+    if posting.posted_date:
+        try:
+            posted = date.fromisoformat(posting.posted_date)
+            days_since_posted = (date.today() - posted).days
+            for tier in cfg.get("recency", {}).get("bonus_tiers", []):
+                if days_since_posted <= tier.get("within_days", 0):
+                    score += tier.get("bonus", 0)
+                    break
+        except ValueError:
+            pass
+
+    return ScoreResult(score, False, "", salary_min, salary_max)
