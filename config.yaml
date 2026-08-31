@@ -149,6 +149,18 @@ scoring:
     - phrase: "stakeholder relations"
       weight_title: 5
       weight_description: 2
+    - phrase: "change management"
+      weight_title: 5
+      weight_description: 2
+    - phrase: "transformation"
+      weight_title: 5
+      weight_description: 2
+    - phrase: "engagement program"
+      weight_title: 5
+      weight_description: 2
+    - phrase: "program design"
+      weight_title: 5
+      weight_description: 2
 
   # Bonus points if the firm type looks like PE / asset management / mission-driven.
   firm_type_bonus:
