@@ -1,0 +1,216 @@
+# =============================================================================
+# Job Search Aggregator - Configuration
+# Edit this file to add/remove companies, tune keywords, and adjust filters.
+# No coding needed - just edit the lists below and save.
+# =============================================================================
+
+# ------------------------------------------------------------------
+# Companies to track.
+# platform must be one of: greenhouse, lever, ashby, workday, rss
+#
+# How to find the IDs yourself for a new company:
+#   Greenhouse: look for job-boards.greenhouse.io/<board_id> in the company's
+#               careers page URL -> that <board_id> is what you need.
+#   Lever:      look for jobs.lever.co/<board_id>.
+#   Ashby:      look for jobs.ashbyhq.com/<board_id>.
+#   Workday:    look for a URL like
+#               https://<tenant>.wd#.myworkdayjobs.com/<site>
+#               -> tenant, wd number, and site all go below.
+#   RSS:        just paste the feed URL.
+# ------------------------------------------------------------------
+companies:
+  - name: Audax Group
+    platform: greenhouse
+    board_id: audaxgroup
+
+  - name: Summit Partners
+    platform: greenhouse
+    board_id: summitpartnerslp
+
+  - name: General Catalyst
+    platform: greenhouse
+    board_id: generalcatalyst
+
+  - name: HarbourVest Partners
+    platform: workday
+    tenant: harbourvest
+    wd_host: wd5
+    site: HVP
+
+  - name: Bain Capital
+    platform: workday
+    tenant: baincapital
+    wd_host: wd1
+    site: External_Private
+
+  - name: Advent International
+    platform: workday
+    tenant: adventinternational
+    wd_host: wd12
+    site: AdventAgency
+
+  - name: Cambridge Associates
+    platform: workday
+    tenant: cambridgeassociates
+    wd_host: wd5
+    site: Cambridge_Associates
+
+  - name: Wellington Management
+    platform: workday
+    tenant: wellington
+    wd_host: wd5
+    site: External
+
+  - name: Fidelity Investments
+    platform: workday
+    tenant: fmr
+    wd_host: wd1
+    site: FidelityCareers
+    # Fidelity's board spans the whole company (retail, tech, ops, etc.),
+    # so narrow the fetch with a search term rather than pulling everything.
+    # Change or add more Fidelity entries with different search_text values
+    # to widen this later.
+    search_text: "investor relations"
+
+  # --- Not yet wired up ---------------------------------------------------
+  # No public Greenhouse/Lever/Ashby/Workday board was found for these via
+  # web search. Either they don't post firm-level roles outside LinkedIn, or
+  # they use a platform not covered here. If you find the real careers URL,
+  # fill in the fields below (uncomment first) and I'll adapt the fetcher.
+  # -------------------------------------------------------------------------
+  # - name: TA Associates
+  #   platform: unknown
+  #   careers_url: https://www.ta.com/careers/
+  #
+  # - name: Berkshire Partners
+  #   platform: unknown
+  #   careers_url: https://berkshirepartners.com/careers/
+  #
+  # - name: Thomas H. Lee Partners
+  #   platform: unknown
+  #   careers_url: https://thl.com/about/life-at-thl/
+  #
+  # - name: Charlesbank Capital Partners
+  #   platform: unknown
+  #   careers_url: https://www.charlesbank.com/team/
+  #
+  # - name: Riverside Partners
+  #   platform: unknown
+  #   careers_url: https://riversidepartners.com/
+
+# ------------------------------------------------------------------
+# Relevance scoring - your target role profile.
+# Titles/descriptions are checked case-insensitively.
+# ------------------------------------------------------------------
+scoring:
+  # Words/phrases that make a posting MORE relevant.
+  # weight_title applies when the keyword appears in the job title.
+  # weight_description applies when it only appears in the job description.
+  priority_keywords:
+    - phrase: "investor relations"
+      weight_title: 8
+      weight_description: 3
+    - phrase: "lp relations"
+      weight_title: 8
+      weight_description: 3
+    - phrase: "fund relations"
+      weight_title: 8
+      weight_description: 3
+    - phrase: "esg"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "responsible investing"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "product marketing"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "stakeholder engagement"
+      weight_title: 5
+      weight_description: 2
+
+  # Bonus points if the firm type looks like PE / asset management / mission-driven.
+  firm_type_bonus:
+    - phrase: "private equity"
+      weight: 2
+    - phrase: "asset management"
+      weight: 2
+
+# ------------------------------------------------------------------
+# Seniority filter.
+# exclude_terms: if a title contains any of these, the posting is
+#   hard-excluded from results (never shown).
+# include_terms: if a title contains any of these, it gets a scoring bonus
+#   and is treated as "at or above" your target level.
+# Titles that match NEITHER list are still shown (score untouched) so you
+# can eyeball them rather than silently losing anything ambiguous.
+# ------------------------------------------------------------------
+seniority:
+  exclude_terms:
+    - intern
+    - internship
+    - "analyst i"
+    - "analyst 1"
+    - coordinator
+    - "administrative assistant"
+    - receptionist
+    - junior
+  include_terms:
+    - associate
+    - "senior associate"
+    - "vice president"
+    - " vp "
+    - director
+    - principal
+  include_bonus: 4
+
+# ------------------------------------------------------------------
+# Hard excludes - postings matching any of these in the TITLE are dropped
+# entirely, regardless of score.
+# ------------------------------------------------------------------
+exclude_title_terms:
+  - compliance
+  - "general counsel"
+  - paralegal
+  - "legal counsel"
+  - attorney
+
+# ------------------------------------------------------------------
+# Location filter.
+# target_location_terms: any of these appearing in the posting's location
+#   field counts as a location match (big score bonus).
+# remote_terms: any of these counts as remote-friendly (smaller bonus).
+# exclude_if_no_location_match: if true, postings that match NEITHER the
+#   target location NOR a remote term are hard-excluded rather than just
+#   scored low.
+# ------------------------------------------------------------------
+location:
+  target_location_terms:
+    - boston
+    - massachusetts
+    - " ma "
+    - " ma,"
+  remote_terms:
+    - remote
+    - hybrid
+    - "work from home"
+  target_location_bonus: 6
+  remote_bonus: 2
+  exclude_if_no_location_match: true
+
+# ------------------------------------------------------------------
+# Output settings.
+# ------------------------------------------------------------------
+output:
+  html_path: output/jobs.html
+  csv_path: output/jobs.csv
+  write_csv: false
+  # Postings with a score below this are still saved to history but
+  # left out of the HTML/CSV report.
+  min_score_to_show: 0
+
+# ------------------------------------------------------------------
+# Where the history database lives.
+# ------------------------------------------------------------------
+database:
+  path: output/jobs.db
