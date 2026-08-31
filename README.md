@@ -36,6 +36,34 @@ haven't seen in a previous run.
 Run `python refresh.py` any time you want an updated check — there's no
 schedule, it only runs when you tell it to.
 
+## Running it from GitHub instead of your own machine
+
+You don't have to have your computer open to refresh results — a GitHub
+Actions workflow (`.github/workflows/refresh.yml`) can run the exact same
+`refresh.py` in the cloud and publish the report to a URL you can bookmark.
+It only runs when you tell it to (no automatic schedule), same as running
+it locally.
+
+**One-time setup** (only needs doing once):
+1. On GitHub, go to this repo's **Settings → Pages**.
+2. Under "Build and deployment", set **Source** to **GitHub Actions**.
+
+**Every time you want a fresh check:**
+1. Go to the **Actions** tab on GitHub.
+2. Click **Refresh Job Search Results** in the left sidebar.
+3. Click the **Run workflow** button, then **Run workflow** again to confirm.
+4. Wait for it to finish (a green checkmark, usually under a minute).
+5. Open the URL shown in the workflow run's summary (also visible under
+   Settings → Pages once the first run completes) — that's your report,
+   live on the web, no downloading needed.
+
+The workflow keeps its own copy of the history database at
+`.github/data/jobs.db`, separate from your local `output/jobs.db`, so
+running it from GitHub and running it locally won't step on each other's
+dedupe history — they'll just each build up their own history over time.
+If you want a single combined history, stick to running it one way or the
+other consistently.
+
 ## Editing the config (no coding required)
 
 Everything you'd want to tune lives in `config.yaml`. It's a plain text
