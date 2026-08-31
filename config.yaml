@@ -122,10 +122,22 @@ scoring:
     - phrase: "responsible investing"
       weight_title: 6
       weight_description: 2
+    - phrase: "responsible investment"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "responsible growth"
+      weight_title: 6
+      weight_description: 2
     - phrase: "product marketing"
       weight_title: 6
       weight_description: 2
+    - phrase: "product specialist"
+      weight_title: 6
+      weight_description: 2
     - phrase: "stakeholder engagement"
+      weight_title: 5
+      weight_description: 2
+    - phrase: "stakeholder relations"
       weight_title: 5
       weight_description: 2
 
