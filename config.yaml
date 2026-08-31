@@ -119,6 +119,15 @@ scoring:
     - phrase: "esg"
       weight_title: 6
       weight_description: 2
+    - phrase: "esg strategy"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "esg program"
+      weight_title: 6
+      weight_description: 2
+    - phrase: "sustainability"
+      weight_title: 6
+      weight_description: 2
     - phrase: "responsible investing"
       weight_title: 6
       weight_description: 2
